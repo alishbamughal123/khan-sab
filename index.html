@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en" data-theme="midnight">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Happy Birthday, Khan Sab</title>
+<meta property="og:title" content="Happy Birthday, Khan Sab 🎉">
+<meta property="og:description" content="A birthday tribute to our leader, Imran Khan.">
+<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Poppins:wght@300;400;600&family=Rubik:wght@800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+<canvas id="bg"></canvas>
+<div class="aurora"><i></i><i></i><i></i></div>
+<canvas id="confetti"></canvas>
+<div class="balloons" id="balloons"></div>
+
+<div id="gate">
+  <div class="gate-box">
+    <div class="orb"></div>
+    <p class="kicker">You are invited</p>
+    <h2>A celebration for a remarkable leader</h2>
+    <button id="openBtn">Begin the Celebration ♪</button>  </div>
+</div>
+
+<main>
+  <section class="hero" id="hero">
+    <div class="hero-text">
+      <p class="kicker">October 5th · A Day to Celebrate</p>
+      <div class="stage" id="stage">
+        <h1 class="line3d" id="l1" aria-label="Happy Birthday"></h1>
+        <h1 class="line3d big" id="l2" aria-label="Khan Sab"></h1>
+      </div>
+      <p class="role" id="role"></p>
+      <div class="countdown" id="countdown"></div>
+      <button class="party" id="partyBtn">🎉 Celebrate</button>
+    </div>
+
+    <div class="portrait" id="portrait">
+      <div class="ring"></div>
+      <div class="ring r2"></div>
+      <div class="arch"><img id="heroImg" alt="Imran Khan"></div>
+      <span class="spark s1">✦</span><span class="spark s2">✦</span><span class="spark s3">✧</span><span class="spark s4">✦</span>
+      <div class="badge"><b id="age">74</b><small>years</small></div>
+    </div>
+    <div class="scroll">scroll ↓</div>
+  </section>
+
+  <section class="gallery" id="gallery">
+    <div class="gbg" id="gbg"></div>
+    <h2 class="title">Memorable Moments</h2>
+    <div class="gwrap">
+      <div class="frame" id="frame">
+        <img id="gimg" alt="">
+        <div class="shine"></div>
+        <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+      </div>
+      <div class="ginfo">
+        <span class="gnum" id="gnum">01</span>
+        <h3 id="gcap"></h3>
+        <div class="thumbs" id="thumbs"></div>
+        <div class="bar"><i id="gbar"></i></div>
+        <div class="ctrl"><button id="prev" aria-label="Previous">‹</button><button id="next" aria-label="Next">›</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wishes">
+    <h2 class="title">Heartfelt Wishes</h2>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <section class="send">
+    <h2 class="title">Leave Your Wish</h2>
+    <form id="wishForm">
+      <input id="wName" placeholder="Your name" maxlength="30" required>
+      <textarea id="wMsg" placeholder="Write a message for Khan Sab..." maxlength="160" required></textarea>
+      <button>Send Wish 💌</button>
+    </form>
+    <div class="wall" id="wall"></div>
+  </section>
+
+  <footer>Made with ❤️ by his supporters</footer>
+</main>
+
+<!-- music player -->
+<div class="player" id="player" hidden>
+  <button id="playBtn" aria-label="Play / Pause">▶</button>
+  <div class="eq"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="pinfo"><b id="songTitle">Song</b><small id="songSub">Tap play</small></div>
+</div>
+<audio id="music" loop preload="auto"></audio>
+<div id="ytHost"></div>
+<script src="app.js"></script>
+</body>
+</html>
