@@ -16,6 +16,9 @@ const PHOTOS = [
 // SONG: put your mp3 at assets/song.mp3  — OR set YT_ID to a YouTube video id (e.g. 'dQw4w9WgXcQ')
 const SONG = { src: 'assets/song.mp3', title: 'Khan Sab Birthday Song', sub: 'Tap to play' };
 const YT_ID = '';
+// SoundCloud track (streamed through SoundCloud's official embedded player — nothing is downloaded)
+const SC_URL = 'https://soundcloud.com/shoaib-khan-40/ay-puttar-hattan-tay-nai-wikdaycover-by-hadia-hashmi';
+const SC_START = 20000;                                  // start (and loop back to) 20 seconds in, in ms
 const WISHES = [
   ['🏆', 'Your courage and determination inspire millions. May you be blessed with good health and a long life.'],
   ['✨', 'The prayers of countless hearts are with you today. Happy Birthday, Khan Sab!'],
@@ -145,102 +148,29 @@ const confetti = (function () {
   return burst;
 })();
 
-/* ====== original party music (Web Audio, no file needed) ====== */
-const synth = (function () {
-  let ctx, master, rev, chordBus, leadBus, noise, timer, step = 0, next = 0, on = false;
-  const BPM = 124, BEAT = 60 / BPM, STEP = BEAT / 4, LOOP = 16 * 8;       // 8 bars of 16 steps
-  const C = [261.63, 329.63, 392], G = [196, 246.94, 293.66], Am = [220, 261.63, 329.63], F = [174.61, 220, 261.63];
-  const BARS = [[C, 65.41], [G, 49], [Am, 55], [F, 43.65], [C, 65.41], [G, 49], [Am, 55], [F, 43.65]];
-  const SC = [523.25, 587.33, 659.25, 783.99, 880, 1046.5];              // C major pentatonic
-  const MEL = [
-    [2, -1, -1, 2, -1, 3, -1, 4, -1, -1, 3, -1, 2, -1, -1, -1],
-    [4, -1, -1, 4, -1, 3, -1, 2, -1, -1, 3, -1, -1, -1, -1, -1],
-    [3, -1, -1, 3, -1, 4, -1, 5, -1, -1, 4, -1, 3, -1, 2, -1],
-    [2, -1, 3, -1, 2, -1, 0, -1, 1, -1, -1, -1, 0, -1, -1, -1],
-  ];
-  function env(g, t, v, a, d) { g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + a); g.gain.exponentialRampToValueAtTime(.0001, t + d); }
-  function osc(type, f, t, d, v, dest, det = 0, a = .01) {
-    const o = ctx.createOscillator(), g = ctx.createGain(); o.type = type; o.frequency.value = f; o.detune.value = det;
-    env(g, t, v, a, d); o.connect(g).connect(dest); o.start(t); o.stop(t + d + .05);
-  }
-  function kick(t) {
-    const o = ctx.createOscillator(), g = ctx.createGain();
-    o.frequency.setValueAtTime(160, t); o.frequency.exponentialRampToValueAtTime(42, t + .13);
-    g.gain.setValueAtTime(.9, t); g.gain.exponentialRampToValueAtTime(.001, t + .28);
-    o.connect(g).connect(master); o.start(t); o.stop(t + .3);
-  }
-  function noiseHit(t, d, v, hz, type) {
-    const s = ctx.createBufferSource(), g = ctx.createGain(), f = ctx.createBiquadFilter();
-    s.buffer = noise; f.type = type; f.frequency.value = hz;
-    g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.001, t + d);
-    s.connect(f).connect(g).connect(master); s.start(t); s.stop(t + d + .02);
-  }
-  function chord(notes, t) {                                             // warm detuned "supersaw" pad
-    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(700, t); lp.frequency.linearRampToValueAtTime(2600, t + BEAT * 2);
-    lp.connect(chordBus);
-    notes.forEach(f => [-12, 0, 12].forEach(dt => osc('sawtooth', f * 2, t, BEAT * 4, .035, lp, dt, .08)));
-  }
-  function schedule() {
-    while (next < ctx.currentTime + .3) {
-      const s = step % LOOP, t = next, bar = Math.floor(s / 16), p = s % 16, [ch, root] = BARS[bar];
-      if (p % 4 === 0) {                                                  // four-on-the-floor + pumping chords
-        kick(t); chordBus.gain.cancelScheduledValues(t); chordBus.gain.setValueAtTime(.2, t); chordBus.gain.linearRampToValueAtTime(1, t + BEAT * .5);
-      }
-      if (p === 4 || p === 12) { noiseHit(t, .16, .35, 1500, 'bandpass'); osc('triangle', 220, t, .1, .15, master); }   // clap
-      if (p % 4 === 2) noiseHit(t, .09, .22, 8000, 'highpass');                                                         // open hat
-      else if (p % 2) noiseHit(t, .03, .08, 9000, 'highpass');                                                           // closed hat
-      if (p % 4 === 2) { osc('sine', root * 2, t, STEP * 3.2, .5, master); osc('sawtooth', root * 2, t, STEP * 3, .08, master); }  // off-beat bass
-      if (p === 0) chord(ch, t);
-      osc('triangle', ch[[0, 1, 2, 1][p % 4]] * 4, t, STEP * 1.4, p % 4 ? .035 : .06, leadBus);                         // sparkle arp
-      const m = MEL[bar % 4][p];
-      if (m >= 0) { osc('triangle', SC[m], t, STEP * 3, .2, leadBus); osc('sine', SC[m] * 2, t, STEP * 2, .05, leadBus); osc('square', SC[m], t, STEP * 1.5, .02, leadBus); }
-      step++; next += STEP;
-    }
-  }
-  function impulse(sec) {                                                // synthetic reverb tail
-    const n = ctx.sampleRate * sec, b = ctx.createBuffer(2, n, ctx.sampleRate);
-    for (let c = 0; c < 2; c++) { const d = b.getChannelData(c); for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2.5); }
-    return b;
-  }
-  function start() {
-    ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
-    if (!master) {
-      master = ctx.createGain(); master.gain.value = 0;
-      const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -16; comp.ratio.value = 4;
-      master.connect(comp).connect(ctx.destination);
-      rev = ctx.createConvolver(); rev.buffer = impulse(2.2); const rg = ctx.createGain(); rg.gain.value = .35; rev.connect(rg).connect(master);
-      chordBus = ctx.createGain(); chordBus.connect(master); chordBus.connect(rev);
-      leadBus = ctx.createGain(); leadBus.connect(master); leadBus.connect(rev);
-      noise = ctx.createBuffer(1, ctx.sampleRate * .5, ctx.sampleRate);
-      const d = noise.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-    }
-    ctx.resume(); step = 0; next = ctx.currentTime + .05; on = true;
-    master.gain.cancelScheduledValues(ctx.currentTime); master.gain.linearRampToValueAtTime(.55, ctx.currentTime + 1.5);
-    clearInterval(timer); timer = setInterval(schedule, 80); schedule();
-  }
-  function stop() {
-    on = false; clearInterval(timer);
-    if (master) { master.gain.cancelScheduledValues(ctx.currentTime); master.gain.linearRampToValueAtTime(0, ctx.currentTime + .4); }
-  }
-  return { start, stop, get on() { return on; } };
-})();
-
-/* ====== music player: YouTube → mp3 file → built-in celebration music ====== */
+/* ====== music: SoundCloud track (streamed via the official embedded player) → optional local mp3 ====== */
 const music = (function () {
-  const a = $('music'), pl = $('player'), btn = $('playBtn'); let playing = false, yt = null, mode = YT_ID ? 'yt' : 'file';
-  $('songTitle').textContent = SONG.title; $('songSub').textContent = SONG.sub;
-  if (mode === 'file') { a.src = SONG.src; a.volume = .7; }
-  function set(on) { playing = on; pl.classList.toggle('on', on); btn.textContent = on ? '❚❚' : '▶'; if (on) $('songSub').textContent = 'Now playing'; }
-  function useSynth() { mode = 'synth'; $('songTitle').textContent = 'Birthday Music'; synth.start(); set(true); }
-  function play() {
-    if (mode === 'yt') {
-      if (!yt) { yt = document.createElement('iframe'); yt.allow = 'autoplay'; yt.src = `https://www.youtube.com/embed/${YT_ID}?autoplay=1&loop=1&playlist=${YT_ID}`; $('ytHost').appendChild(yt); }
-      set(true);
-    } else if (mode === 'synth') useSynth();
-    else a.play().then(() => set(true)).catch(useSynth);   // no mp3 found → built-in music
+  const a = $('music'); let sc = null, started = false, wantPlay = false;
+  function loadSC() {
+    const f = document.createElement('iframe'); f.allow = 'autoplay';
+    f.src = 'https://w.soundcloud.com/player/?url=' + encodeURIComponent(SC_URL) + '&auto_play=true&hide_related=true&show_comments=false&visual=false';
+    $('ytHost').appendChild(f);
+    const boot = () => {
+      sc = SC.Widget(f); let seeked = false;
+      sc.bind(SC.Widget.Events.READY, () => { sc.setVolume(85); sc.play(); });
+      sc.bind(SC.Widget.Events.PLAY, () => { started = true; if (!seeked) { seeked = true; sc.seekTo(SC_START); } });   // jump ahead once playback begins
+      sc.bind(SC.Widget.Events.FINISH, () => { sc.seekTo(SC_START); sc.play(); });                                      // loop from the same point
+    };
+    if (window.SC) boot(); else { const s = document.createElement('script'); s.src = 'https://w.soundcloud.com/player/api.js'; s.onload = boot; document.head.appendChild(s); }
+    // if the browser blocked autoplay, the very next tap/click anywhere starts it
+    const retry = () => { if (wantPlay && sc && !started) sc.play(); };
+    addEventListener('pointerdown', retry); addEventListener('keydown', retry);
   }
-  function pause() { if (mode === 'yt') { yt && yt.remove(); yt = null; } else if (mode === 'synth') synth.stop(); else a.pause(); set(false); }
-  btn.onclick = () => playing ? pause() : play();
+  function play() {
+    wantPlay = true;
+    if (SC_URL) { if (!sc && !document.querySelector('#ytHost iframe')) loadSC(); else if (sc) sc.play(); }
+    else { a.src = SONG.src; a.volume = .8; a.loop = true; a.play().catch(() => {}); }
+  }
   return { play };
 })();
 
